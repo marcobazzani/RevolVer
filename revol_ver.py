@@ -1,10 +1,14 @@
 import argparse
+from logging import Logger
 from pathlib import Path
-from lib.outputs import OutputsDB, OutputsExcel
+
+from lib.outputs import OutputsDB, OutputsExcel, OutputsCsv
 from lib.models import TransactionModel
 from lib.inputs import Inputs
 from lib.web_requests import WebRequests
 from lib.logg import Logging
+
+logger: Logger
 
 
 def read_inputs(source: str, period: str, epoch: int) -> tuple[list[dict], int]:
@@ -15,20 +19,22 @@ def read_inputs(source: str, period: str, epoch: int) -> tuple[list[dict], int]:
         if not found:
             return transactions, count
         if period == 'month':
-            transactions = WebRequests.get_monthly_transactions(cookie=cookie, 
-                                                                device_id=device_id, 
-                                                                pocket_id=pocket_id, 
+            transactions = WebRequests.get_monthly_transactions(cookie=cookie,
+                                                                device_id=device_id,
+                                                                pocket_id=pocket_id,
                                                                 epoch=epoch)
         elif period == 'all':
-            transactions = WebRequests.get_all_transactions(cookie=cookie, 
-                                                            device_id=device_id, 
+            transactions = WebRequests.get_all_transactions(cookie=cookie,
+                                                            device_id=device_id,
                                                             pocket_id=pocket_id)
     elif source == 'file':
         transactions = Inputs.read_json_file(abs_root_path, 'rev.json')
     count = len(transactions)
     return transactions, count
 
-def process(trans: list[dict], period: str, month: int, existing_ids: list[str] = []) -> tuple[list[dict], int]:
+def process(trans: list[dict], period: str, month: int, existing_ids: list[str] = None) -> tuple[list[dict], int]:
+    if existing_ids is None:
+        existing_ids = []
     count_all = len(trans)
     duplicates = []
     transactions = []
@@ -50,26 +56,29 @@ def process(trans: list[dict], period: str, month: int, existing_ids: list[str] 
 def write_outputs(transactions: list[dict], options: argparse.Namespace, db_output: OutputsDB) -> None:
     if 'excel' in options.output:
         OutputsExcel.to_excel(transactions, options.date, options.period, abs_root_path)
+    if 'csv' in options.output:
+        OutputsCsv.to_csv(transactions, options.date, options.period, abs_root_path)
     if 'db' in options.output:
         db_output.to_db(transactions)
 
-def db_instance_and_existing_records(dont_deduplicate: bool, output: list[str]) -> list:
+def db_instance_and_existing_records(dont_deduplicate: bool,
+                                     output: list[str]) -> tuple[list[str] | None, OutputsDB | None]:
     '''
     DB is not needed if user only wants to use excel output and they
     never specified SQL as output. This prevents creating empty database.
     Also if user specified dont_deduplicate flag, then the existing database
-    is not needed. 
+    is not needed.
     '''
-    existing_ids = []
-    db_output = None
-    if dont_deduplicate: # allowed only with excel output
+    if dont_deduplicate: # allowed only with file output
         logger.info('Database is not needed because deduplication is turned off')
-        return existing_ids, db_output
+        return [], None
+
     db_file = abs_root_path / 'trans_db.sql'
-    if not Path(db_file).exists() and 'excel' in output and len(output) == 1:
-        logger.info('Database is not needed because output is excel and DB does not yet exist.')
-        return existing_ids, db_output
-    db_output = OutputsDB(db_file)
+    if not Path(db_file).exists() and 'db' not in output:
+        logger.info('Database is not needed because output is file and DB does not yet exist.')
+        return [], None
+
+    db_output = OutputsDB(str(db_file))
     existing_ids = db_output.read_existing_records()
     return existing_ids, db_output
 
@@ -78,7 +87,7 @@ def main() -> None:
     transactions, count = read_inputs(options.source, options.period, options.epoch)
     if count == 0:
         return
-    existing_ids, db_output = db_instance_and_existing_records(options.dont_deduplicate, 
+    existing_ids, db_output = db_instance_and_existing_records(options.dont_deduplicate,
                                                                options.output)
     transactions, count = process(transactions, options.period, options.month, existing_ids)
     if count == 0:
