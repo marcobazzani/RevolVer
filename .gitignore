@@ -1,1 +1,8 @@
 .idea/
+
+exports/**.csv
+export/**.xlsx
+
+consume/**.har
+
+trans_db.sql
