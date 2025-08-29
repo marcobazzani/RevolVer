@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger('revol_ver')
 
 class WebRequests:
-    
+
     @classmethod
     def fetch_trans(cls, cookie: str, device_id: str, pocket_id:str, to_param: int = 0) -> list[dict]:
         '''
@@ -52,7 +52,7 @@ class WebRequests:
 
     @classmethod
     def get_all_transactions(cls, cookie: str, device_id: str, pocket_id:str) -> list[dict]:
-        ''' 
+        '''
         Revolut will take epoch and return certain number of results BEFORE this date.
         This function generates epochs for each month and fetches transactions
         '''
