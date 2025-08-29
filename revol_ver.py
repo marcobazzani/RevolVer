@@ -55,9 +55,9 @@ def process(trans: list[dict], period: str, month: int, existing_ids: list[str] 
 
 def write_outputs(transactions: list[dict], options: argparse.Namespace, db_output: OutputsDB) -> None:
     if 'excel' in options.output:
-        OutputsExcel.to_excel(transactions, options.date, options.period, abs_root_path)
+        OutputsExcel.to_file(transactions, options.date, options.period, abs_root_path)
     if 'csv' in options.output:
-        OutputsCsv.to_csv(transactions, options.date, options.period, abs_root_path)
+        OutputsCsv.to_file(transactions, options.date, options.period, abs_root_path)
     if 'db' in options.output:
         db_output.to_db(transactions)
 
@@ -75,7 +75,7 @@ def db_instance_and_existing_records(dont_deduplicate: bool,
 
     db_file = abs_root_path / 'trans_db.sql'
     if not Path(db_file).exists() and 'db' not in output:
-        logger.info('Database is not needed because output is file and DB does not yet exist.')
+        logger.info('Database is not needed because output is file and DB does not yet exist')
         return [], None
 
     db_output = OutputsDB(str(db_file))
