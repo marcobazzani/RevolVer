@@ -9,7 +9,7 @@ from pathlib import Path
 logger = logging.getLogger('revol_ver')
 
 class Inputs:
-    
+
     @classmethod
     def read_json_file(cls, abs_root_path: Path, filename: str) -> list[dict]:
         json_file = abs_root_path / 'consume' / filename
@@ -45,7 +45,7 @@ class Inputs:
                     return found, cookie, device_id, pocket_id
         logger.error('Could not find authentication data from HAR file.')
         return found, cookie, device_id, pocket_id
-    
+
     @classmethod
     def get_options(cls) -> argparse.Namespace:
         parser = argparse.ArgumentParser(
@@ -54,7 +54,7 @@ class Inputs:
         parser.add_argument('-p', '--period', choices=['month', 'all'], default='month')
         parser.add_argument('-s', '--source', choices=['web_request', 'file'], default='web_request')
         parser.add_argument('-d', '--date', help='Month and year (YYYY.MM), required for period "month"')
-        parser.add_argument('-o', '--output', choices=['db', 'excel', 'all'], default='all', help='Output destinations')
+        parser.add_argument('-o', '--output', choices=['db', 'excel', 'csv', 'all'], default='all', help='Output destinations')
         parser.add_argument('-dd', '--dont_deduplicate', action='store_true', help='Don\'t use database for deduplication')
 
         args = parser.parse_args()
@@ -72,15 +72,16 @@ class Inputs:
             args.month = month
 
         if args.output == 'all':
-            args.output = ['db', 'excel']
+            args.output = ['db', 'excel', 'csv']
         else:
             args.output = [args.output]
 
         if 'db' in args.output and args.dont_deduplicate is True:
             parser.error('Cannot write to database without deduplication!')
+
         logger.debug(f'Parsed command line arguments: {args}')
         return args
-    
+
     @classmethod
     def month_to_epoch(cls, i: str) -> tuple[str, int, int]:
         '''
@@ -100,7 +101,7 @@ class Inputs:
         last_day = res[1]
         dt_last_day = datetime(year_i, month_i, last_day, 23, 59, 59)
         return message, int(dt_last_day.timestamp()) * 1000, month_i
-    
+
     @staticmethod
     def get_ini_config(cat: str) -> dict:
         config = configparser.ConfigParser()
