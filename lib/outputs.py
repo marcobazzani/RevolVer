@@ -7,17 +7,18 @@ from pathlib import Path
 
 logger = logging.getLogger('revol_ver')
 
+
 class OutputsDB:
     def __init__(self, db_file: str):
         self.conn = self.connect_to_db(db_file)
-    
+
     def connect_to_db(self, db_file: str) -> sqlite3.Connection:
         c = sqlite3.connect(db_file)
         logger.info(f'Connected to database: {c}')
         return c
-    
+
     def to_db(self, trans: list[dict]) -> None:
-        df = pd.DataFrame(trans) 
+        df = pd.DataFrame(trans)
         result = df.to_sql('raw_transactions', self.conn, if_exists='append', index=False)
         logger.info(f'Saved {result} records to DB!')
 
@@ -32,21 +33,40 @@ class OutputsDB:
             logger.warning('Cannot find database file, will create new.')
             return []
         return df['legId'].tolist()
-    
-class OutputsExcel:
+
+
+class FileOutput:
+    file_extension: str
+
     @classmethod
-    def generate_excel_filename(cls, date_arg: str, period: str) -> str:
+    def generate_filename(cls, date_arg: str, period: str) -> str:
         if period == 'all':
             date = period
         else:
             date = 'month_' + date_arg.replace('.', '_')
         now = re.sub(r'\W', '_', str(datetime.now()))
-        return f'{now}_export_{date}.xlsx'
+        return f'{now}_export_{date}.{cls.file_extension}'
+
+
+class OutputsExcel(FileOutput):
+    file_extension = 'xlsx'
 
     @classmethod
     def to_excel(cls, trans: list[dict], date_arg: str, period: str, path: Path) -> None:
-        filename = cls.generate_excel_filename(date_arg, period)
+        filename = cls.generate_filename(date_arg, period)
         df = pd.DataFrame(trans)
         file_location = path / 'exports' / filename
         df.to_excel(file_location, index=False)
-        logger.info(f'Saved {len(df)} rows to file {filename}')
+        logger.info(f'Saved {len(df)} rows to Excel file {filename}')
+
+
+class OutputsCsv(FileOutput):
+    file_extension = 'csv'
+
+    @classmethod
+    def to_csv(cls, trans: list[dict], date_arg: str, period: str, path: Path) -> None:
+        filename = cls.generate_filename(date_arg, period)
+        df = pd.DataFrame(trans)
+        file_location = path / 'exports' / filename
+        df.to_csv(file_location, index=False)
+        logger.info(f'Saved {len(df)} rows to CSV file {filename}')
