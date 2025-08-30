@@ -9,7 +9,7 @@ custom_categories_map = Inputs.get_ini_config('custom.categories')
 
 class TransactionModel(BaseModel):
     '''
-    Represents a single Revolut transaction. 
+    Represents a single Revolut transaction.
     '''
     id: str
     legId: str
@@ -42,7 +42,7 @@ class TransactionModel(BaseModel):
             #logger.debug(f'Converted {epoch} to datetime obj {dt}')
             return dt
         logger.error(f'Cannot convert {epoch} to datetime obj')
-    
+
     @field_validator('category', mode='before')
     def id_to_custom_category(cls, cat: str, trans: dict) -> str:
         'Translates custom category UUID to category defined in config.ini'

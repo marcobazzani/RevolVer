@@ -1,9 +1,11 @@
 import logging
+from logging import Logger
+
 from lib.inputs import Inputs
 
 class Logging:
     @staticmethod
-    def setup_logging() -> None:
+    def setup_logging() -> Logger:
         logging.basicConfig(
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
@@ -14,11 +16,11 @@ class Logging:
         level = Inputs.get_ini_config('other').get('loglevel', 'INFO')
         logger.setLevel(level)
         return logger
-        
+
     @staticmethod
-    def log_process(duplicates: list, 
-                    not_correct_month: list, 
-                    count_all: int, 
+    def log_process(duplicates: list,
+                    not_correct_month: list,
+                    count_all: int,
                     count_success: int) -> None:
         logger = logging.getLogger('revol_ver')
         if duplicates:
