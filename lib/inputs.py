@@ -31,7 +31,7 @@ class Inputs:
             request = entr.get('request', {})
             if 'current/transactions/last' in request.get('url', ''):
                 for header in request.get('headers', []):
-                    if header.get('name') == 'cookie':
+                    if header.get('name') == 'Cookie':
                         cookie = header.get('value')
                     if header.get('name') == 'x-device-id':
                         device_id = header.get('value')
