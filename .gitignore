@@ -6,3 +6,5 @@ exports/**.xlsx
 consume/**.har
 
 trans_db.sql
+
+lib/__pycache__/

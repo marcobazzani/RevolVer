@@ -15,7 +15,7 @@ def read_inputs(source: str, period: str, epoch: int) -> tuple[list[dict], int]:
     transactions: list = []
     count: int = 0
     if source == 'web_request':
-        found, cookie, device_id, pocket_id = Inputs.get_auth_data_from_har(abs_root_path)
+        found, cookie, device_id, pocket_id = Inputs.get_auth_data(abs_root_path)
         if not found:
             return transactions, count
         if period == 'month':
