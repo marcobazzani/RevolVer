@@ -9,7 +9,20 @@ Revolut doesn't provide an option to export transactions with custom categories 
 `pip install -r .\requirements.txt`
 
 ### Requirements
-Before each usage, a HAR file must be exported from Revolut web application and saved to `consume/` directory. The script will extract authentication data and later use it to fetch transactions.
+Before each usage, authentication data must be provided. The script supports two methods:
+
+#### Method 1: Copy as cURL (Recommended)
+1. Go to https://app.revolut.com and login.
+2. Open developer tools by pressing F12.
+3. Click on "See all" transactions:  
+<img src="screenshots/select_all_transactions.png" width="500">
+
+4. In the Network tab, find the request to `transactions/last` endpoint, right-click it and select "Copy > Copy as cURL (bash)" or "Copy as cURL (cmd)":  
+5. Paste the copied curl command into `curlcmd.txt` file in the root directory.
+6. Proceed by running the script right away as the authentication data tend to expire fast.
+
+#### Method 2: HAR file (Legacy)
+Alternatively, you can export a HAR file from Revolut web application and save it to `consume/` directory as `app.revolut.com.har`. The script will automatically detect and use it if `curlcmd.txt` is not present.
 
 1. Go to https://app.revolut.com and login.
 2. Open developer tools by pressing F12.   
@@ -62,10 +75,14 @@ Other command line arguments are mostly used for testing purposes. Use `--help` 
 
 ### Common errors
 
-1. **HAR file not found**  
+1. **curl command or HAR file not found**  
+`FileNotFoundError: [Errno 2] No such file or directory: 'curlcmd.txt'`  
+or  
 `FileNotFoundError: [Errno 2] No such file or directory: 'consume\\app.revolut.com.har'`
 
-    Reason and fix: Means you forgot to export HAR file to `consume/` directory or filename is not `app.revolut.com.har`
+    Reason and fix: The script needs authentication data. Either:
+    - Create `curlcmd.txt` in the root directory and paste a curl command (copied from browser DevTools), OR
+    - Export HAR file to `consume/app.revolut.com.har`
   
 2. **Token expired**  
 
@@ -74,7 +91,7 @@ Other command line arguments are mostly used for testing purposes. Use `--help` 
     {'message': 'Access token expired', 'code': 9039}  
     ```
 
-    Reason and fix: Authentication data in `app.revolut.com.har` is expired. Export HAR and try again.  
+    Reason and fix: Authentication data has expired. Copy a fresh curl command or export a new HAR file and try again.  
 
 3. **Custom category not defined**
    ```

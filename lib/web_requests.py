@@ -2,6 +2,7 @@ import requests
 from .inputs import Inputs
 from datetime import datetime
 import logging
+import sys
 
 logger = logging.getLogger('revol_ver')
 
@@ -42,7 +43,9 @@ class WebRequests:
         logger.debug(f'Headers used for fetch:\n{headers}')
         response = requests.get(url, headers=headers, params=params, allow_redirects=True).json()
         if isinstance(response, dict):
-            raise Exception(f'Fetching failed, got response\n{response}')
+            print('')
+            logger.error(f'Fetching failed, got response\n{response}')
+            sys.exit(1)
         return response
 
     @classmethod
