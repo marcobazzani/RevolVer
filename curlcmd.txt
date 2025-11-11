@@ -1,1 +1,1 @@
-# paste here the cURL command from "Copy as cURL" of /last request# paste here the cURL command from "Copy as cURL" of /last request
+# paste here the cURL command from "Copy as cURL" of request /last?count=50&internalPocketId=972xxxb-4fxx-4xxc-axx0-4dxxxxx5f
