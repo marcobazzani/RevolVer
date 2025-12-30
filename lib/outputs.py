@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 import sqlite3
 import re
+import csv
 from datetime import datetime
 from pathlib import Path
 
@@ -61,7 +62,7 @@ class FileOutput(ABC):
 
     @classmethod
     @abstractmethod
-    def to_file(cls, trans: list[dict], date_arg: str, period: str, path: Path) -> None:
+    def to_file(cls, trans: list[dict], date_arg: str, period: str, path: Path, escape_newlines: bool, output_filename: str | None = None) -> None:
         raise NotImplementedError()
 
 
@@ -69,7 +70,7 @@ class OutputsExcel(FileOutput):
     file_extension = 'xlsx'
 
     @classmethod
-    def to_file(cls, trans: list[dict], date_arg: str, period: str, path: Path, output_filename: str | None = None) -> None:
+    def to_file(cls, trans: list[dict], date_arg: str, period: str, path: Path, escape_newlines: bool, output_filename: str | None = None) -> None:
         df, file_location = cls._generate_dataframe_and_location(trans, date_arg, period, path, output_filename)
         df.to_excel(file_location, index=False)
         logger.info(f'Saved {len(df)} rows to Excel file {file_location}')
@@ -79,7 +80,10 @@ class OutputsCsv(FileOutput):
     file_extension = 'csv'
 
     @classmethod
-    def to_file(cls, trans: list[dict], date_arg: str, period: str, path: Path, output_filename: str | None = None) -> None:
+    def to_file(cls, trans: list[dict], date_arg: str, period: str, path: Path, escape_newlines: bool, output_filename: str | None = None) -> None:
         df, file_location = cls._generate_dataframe_and_location(trans, date_arg, period, path, output_filename)
-        df.to_csv(file_location, index=False)
+        if escape_newlines:
+            for col in df.select_dtypes(include=['object']):
+                df[col] = df[col].str.replace('\n', ' ', regex=False)
+        df.to_csv(file_location, index=False, quoting=csv.QUOTE_ALL)
         logger.info(f'Saved {len(df)} rows to CSV file {file_location}')
