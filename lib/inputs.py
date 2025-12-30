@@ -136,6 +136,7 @@ class Inputs:
         parser.add_argument('-s', '--source', choices=['web_request', 'file'], default='web_request')
         parser.add_argument('-d', '--date', help='Month and year (YYYY.MM), required for period "month"')
         parser.add_argument('-o', '--output', choices=['db', 'excel', 'csv', 'all'], default='all', help='Output destinations')
+        parser.add_argument('-f', '--filename', help='Specify the output filename (without extension)')
         parser.add_argument('-dd', '--dont_deduplicate', action='store_true', help='Don\'t use database for deduplication')
 
         args = parser.parse_args()

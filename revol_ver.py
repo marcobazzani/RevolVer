@@ -53,11 +53,11 @@ def process(trans: list[dict], period: str, month: int, existing_ids: list[str] 
     Logging.log_process(duplicates, not_correct_month, count_all, count_success)
     return [t.__dict__ for t in transactions], count_success
 
-def write_outputs(transactions: list[dict], options: argparse.Namespace, db_output: OutputsDB) -> None:
+def write_outputs(transactions: list[dict], options: argparse.Namespace, db_output: OutputsDB, output_filename: str | None) -> None:
     if 'excel' in options.output:
-        OutputsExcel.to_file(transactions, options.date, options.period, abs_root_path)
+        OutputsExcel.to_file(transactions, options.date, options.period, abs_root_path, output_filename)
     if 'csv' in options.output:
-        OutputsCsv.to_file(transactions, options.date, options.period, abs_root_path)
+        OutputsCsv.to_file(transactions, options.date, options.period, abs_root_path, output_filename)
     if 'db' in options.output:
         db_output.to_db(transactions)
 
@@ -92,7 +92,7 @@ def main() -> None:
     transactions, count = process(transactions, options.period, options.month, existing_ids)
     if count == 0:
         return
-    write_outputs(transactions, options, db_output)
+    write_outputs(transactions, options, db_output, options.filename)
 
 if __name__ == '__main__':
     abs_root_path = Path(__file__).parent
