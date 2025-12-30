@@ -55,9 +55,9 @@ def process(trans: list[dict], period: str, month: int, existing_ids: list[str] 
 
 def write_outputs(transactions: list[dict], options: argparse.Namespace, db_output: OutputsDB, output_filename: str | None) -> None:
     if 'excel' in options.output:
-        OutputsExcel.to_file(transactions, options.date, options.period, abs_root_path, output_filename)
+        OutputsExcel.to_file(transactions, options.date, options.period, abs_root_path, options.escape_newlines, output_filename)
     if 'csv' in options.output:
-        OutputsCsv.to_file(transactions, options.date, options.period, abs_root_path, output_filename)
+        OutputsCsv.to_file(transactions, options.date, options.period, abs_root_path, options.escape_newlines, output_filename)
     if 'db' in options.output:
         db_output.to_db(transactions)
 
