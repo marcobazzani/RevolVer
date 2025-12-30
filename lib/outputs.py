@@ -41,7 +41,9 @@ class FileOutput(ABC):
     file_extension: str
 
     @classmethod
-    def _generate_filename(cls, date_arg: str, period: str) -> str:
+    def _generate_filename(cls, date_arg: str, period: str, output_filename: str | None) -> str:
+        if output_filename:
+            return f'{output_filename}.{cls.file_extension}'
         if period == 'all':
             date = period
         else:
@@ -51,8 +53,8 @@ class FileOutput(ABC):
 
     @classmethod
     def _generate_dataframe_and_location(cls, trans: list[dict], date_arg: str,
-                                         period: str, path: Path) -> tuple[pd.DataFrame, Path]:
-        filename = cls._generate_filename(date_arg, period)
+                                         period: str, path: Path, output_filename: str | None) -> tuple[pd.DataFrame, Path]:
+        filename = cls._generate_filename(date_arg, period, output_filename)
         df = pd.DataFrame(trans)
         file_location = path / 'exports' / filename
         return df, file_location
@@ -67,8 +69,8 @@ class OutputsExcel(FileOutput):
     file_extension = 'xlsx'
 
     @classmethod
-    def to_file(cls, trans: list[dict], date_arg: str, period: str, path: Path) -> None:
-        df, file_location = cls._generate_dataframe_and_location(trans, date_arg, period, path)
+    def to_file(cls, trans: list[dict], date_arg: str, period: str, path: Path, output_filename: str | None = None) -> None:
+        df, file_location = cls._generate_dataframe_and_location(trans, date_arg, period, path, output_filename)
         df.to_excel(file_location, index=False)
         logger.info(f'Saved {len(df)} rows to Excel file {file_location}')
 
@@ -77,7 +79,7 @@ class OutputsCsv(FileOutput):
     file_extension = 'csv'
 
     @classmethod
-    def to_file(cls, trans: list[dict], date_arg: str, period: str, path: Path) -> None:
-        df, file_location = cls._generate_dataframe_and_location(trans, date_arg, period, path)
+    def to_file(cls, trans: list[dict], date_arg: str, period: str, path: Path, output_filename: str | None = None) -> None:
+        df, file_location = cls._generate_dataframe_and_location(trans, date_arg, period, path, output_filename)
         df.to_csv(file_location, index=False)
         logger.info(f'Saved {len(df)} rows to CSV file {file_location}')
