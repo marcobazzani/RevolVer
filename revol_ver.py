@@ -15,18 +15,22 @@ def read_inputs(source: str, period: str, epoch: int) -> tuple[list[dict], int]:
     transactions: list = []
     count: int = 0
     if source == 'web_request':
-        found, cookie, device_id, pocket_id = Inputs.get_auth_data(abs_root_path)
+        found, cookie, device_id, pocket_id, wallet_id, account_type = Inputs.get_auth_data(abs_root_path)
         if not found:
             return transactions, count
         if period == 'month':
             transactions = WebRequests.get_monthly_transactions(cookie=cookie,
                                                                 device_id=device_id,
                                                                 pocket_id=pocket_id,
+                                                                wallet_id=wallet_id,
+                                                                account_type=account_type,
                                                                 epoch=epoch)
         elif period == 'all':
             transactions = WebRequests.get_all_transactions(cookie=cookie,
                                                             device_id=device_id,
-                                                            pocket_id=pocket_id)
+                                                            pocket_id=pocket_id,
+                                                            wallet_id=wallet_id,
+                                                            account_type=account_type)
     elif source == 'file':
         transactions = Inputs.read_json_file(abs_root_path, 'rev.json')
     count = len(transactions)

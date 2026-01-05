@@ -28,7 +28,7 @@ class Inputs:
         return contents
 
     @classmethod
-    def get_auth_data(cls, abs_root_path: Path) -> tuple[bool, str, str, str]:
+    def get_auth_data(cls, abs_root_path: Path) -> tuple[bool, str, str, str, str, str]:
         'Detects input format and parses authentication data from either HAR or curl command'
         
         # First, try to read curlcmd.txt to see if it contains a curl command
@@ -52,10 +52,11 @@ class Inputs:
         
         # Fall back to HAR file parsing
         logger.info('Using HAR file for authentication data')
-        return cls.get_auth_data_from_har(abs_root_path)
+        found, cookie, device_id, pocket_id, wallet_id, account_type = cls.get_auth_data_from_har(abs_root_path)
+        return found, cookie, device_id, pocket_id, wallet_id, account_type
 
     @classmethod
-    def get_auth_data_from_curl(cls, curl_content: str) -> tuple[bool, str, str, str]:
+    def get_auth_data_from_curl(cls, curl_content: str) -> tuple[bool, str, str, str, str, str]:
         'Parses curl command from curlcmd.txt and extracts authentication data'
         # Remove all ^ characters (Windows CMD line continuation)
         curl_content = curl_content.replace('^\\^"', '"')
@@ -65,12 +66,14 @@ class Inputs:
         cookie: str = ''
         device_id: str = ''
         pocket_id: str = ''
+        wallet_id: str = ''
+        account_type: str = ''
         
         # Extract URL - works for both bash ('url') and cmd ("url")
         url_match = re.search(r"curl\s+['\"]([^'\"]+)", curl_content)
         if not url_match:
             logger.error('Could not find URL in curl command')
-            return False, '', '', ''
+            return False, '', '', '', '', ''
         
         url = url_match.group(1)
         
@@ -79,7 +82,9 @@ class Inputs:
         query_params = parse_qs(parsed_url.query)
         if 'internalPocketId' in query_params:
             pocket_id = query_params['internalPocketId'][0]
-        
+        if 'walletId' in query_params:
+            wallet_id = query_params['walletId'][0]
+
         # Extract cookie data using -b flag (takes precedence over -H Cookie)
         # cookie = re.compile(r"-b\s+'([^']+)" )
         if cookie_match := re.search(r"-b\s+'([^']+)'", curl_content):
@@ -91,22 +96,29 @@ class Inputs:
         device_id_match = re.search(r"x-device-id:\s+([^']+)", curl_content)
         if device_id_match:
             device_id = device_id_match.group(1)
+
+        # Extract accountType from referer header
+        referer_match = re.search(r"referer:\s+'[^?]+\?accountType=([^&]+)", curl_content)
+        if referer_match:
+            account_type = referer_match.group(1)
         
-        if cookie and device_id and pocket_id:
+        if cookie and device_id and (pocket_id or wallet_id):
             logger.info('Authentication data parsed successfully from curl command')
-            logger.debug(f'Authentication data: \ncookie length: {len(cookie)}\ndevice_id: {device_id}\npocket_id: {pocket_id}')
-            return True, cookie, device_id, pocket_id
+            logger.debug(f'Authentication data: \ncookie length: {len(cookie)}\ndevice_id: {device_id}\npocket_id: {pocket_id}\nwallet_id: {wallet_id}\naccount_type: {account_type}')
+            return True, cookie, device_id, pocket_id, wallet_id, account_type
         
-        logger.error(f'Could not find all required authentication data from curl command. Found: cookie={bool(cookie)}, device_id={bool(device_id)}, pocket_id={bool(pocket_id)}')
-        return False, cookie, device_id, pocket_id
+        logger.error(f'Could not find all required authentication data from curl command. Found: cookie={bool(cookie)}, device_id={bool(device_id)}, pocket_id={bool(pocket_id)}, wallet_id={bool(wallet_id)}')
+        return False, cookie, device_id, pocket_id, wallet_id, account_type
 
     @classmethod
-    def get_auth_data_from_har(cls, abs_root_path: Path) -> tuple[bool, str, str, str]:
+    def get_auth_data_from_har(cls, abs_root_path: Path) -> tuple[bool, str, str, str, str, str]:
         'Parses HAR file and finds authentication data'
         har = cls.read_json_file(abs_root_path, 'app.revolut.com.har')
         cookie: str = ''
         device_id: str = ''
         pocket_id: str = ''
+        wallet_id: str = ''
+        account_type: str = ''
         found = False
         for entr in har.get('log', {}).get('entries', []):
             request = entr.get('request', {})
@@ -116,16 +128,26 @@ class Inputs:
                         cookie = header.get('value')
                     if header.get('name') == 'x-device-id':
                         device_id = header.get('value')
+                    if header.get('name') == 'Referer':
+                        referer_url = header.get('value')
+                        parsed_referer = urlparse(referer_url)
+                        referer_query_params = parse_qs(parsed_referer.query)
+                        if 'accountType' in referer_query_params:
+                            account_type = referer_query_params['accountType'][0]
+
                 for q in request.get('queryString'):
                     if q.get('name') == 'internalPocketId':
                         pocket_id = q.get('value')
-                if cookie and device_id and pocket_id:
+                    if q.get('name') == 'walletId':
+                        wallet_id = q.get('value')
+
+                if cookie and device_id and (pocket_id or wallet_id):
                     found = True
                     logger.info('Authentication data parsed successfully')
-                    logger.debug(f'Authentication data: \ncookie: {cookie}\ndevice_id: {device_id}\npocket_id: {pocket_id}')
-                    return found, cookie, device_id, pocket_id
+                    logger.debug(f'Authentication data: \ncookie: {cookie}\ndevice_id: {device_id}\npocket_id: {pocket_id}\nwallet_id: {wallet_id}\naccount_type: {account_type}')
+                    return found, cookie, device_id, pocket_id, wallet_id, account_type
         logger.error('Could not find authentication data from HAR file.')
-        return found, cookie, device_id, pocket_id
+        return found, cookie, device_id, pocket_id, wallet_id, account_type
 
     @classmethod
     def get_options(cls) -> argparse.Namespace:
