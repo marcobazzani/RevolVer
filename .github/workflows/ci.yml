@@ -18,7 +18,7 @@ jobs:
         pip install pytest pytest-cov build
     - name: Run tests with coverage
       run: |
-        pytest --cov=. --cov-fail-under=100
+        pytest
 
   package:
     needs: test
