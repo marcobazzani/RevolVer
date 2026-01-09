@@ -107,8 +107,8 @@ class TestWebRequests:
                  # Using a real datetime object for return value
                  fixed_now = datetime(2023, 1, 15)
                  mock_datetime.now.return_value = fixed_now
-                 
+
                  dates = WebRequests.generate_dates()
                  # 2022: 12 months.
-                 # 2023: Jan is skipped (break condition)
-                 assert len(dates) == 12
+                 # 2023: Jan is included (current month)
+                 assert len(dates) == 13
